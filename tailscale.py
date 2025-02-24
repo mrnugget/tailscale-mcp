@@ -3,6 +3,7 @@ import subprocess
 import json
 from dataclasses import dataclass
 from mcp.server.fastmcp import FastMCP
+import argparse
 
 # Initialize FastMCP server
 mcp = FastMCP("tailscale")
@@ -135,5 +136,16 @@ Last Seen: {device.last_seen}{traffic}
         return f"Error getting device info: {str(e)}"
 
 if __name__ == "__main__":
-    # Initialize and run the server
-    mcp.run(transport='stdio')
+    parser = argparse.ArgumentParser(description='Run Tailscale MCP server')
+    parser.add_argument('--transport', choices=['stdio', 'http'], default='stdio',
+                      help='Transport type (stdio or http)')
+    parser.add_argument('--port', type=int, default=3000,
+                      help='Port for HTTP server (only used with --transport http)')
+    args = parser.parse_args()
+
+    if args.transport == 'http':
+        mcp.settings.port = args.port
+        mcp.run(transport='sse')
+    else:
+        # Run with stdio transport
+        mcp.run(transport='stdio')
